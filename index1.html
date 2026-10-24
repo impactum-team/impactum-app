@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IMPACTUM</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0B0F17;--bg2:#0E1420;--em:#10B981;--cy:#06B6D4;--gold:#F59E0B;--tx:#e8eef5;--mu:#8a98aa;--gl:rgba(255,255,255,.05);--bd:rgba(255,255,255,.1)}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:radial-gradient(900px 500px at 80% -10%,rgba(16,185,129,.14),transparent),var(--bg);color:var(--tx);overflow:hidden}
+#app{display:flex;height:100%}
+nav{position:fixed;z-index:50;left:0;right:0;bottom:0;display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom));background:rgba(14,20,32,.85);backdrop-filter:blur(14px);border-top:1px solid var(--bd)}
+nav button{background:none;border:0;color:var(--mu);font:600 11px 'Plus Jakarta Sans',system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border-radius:12px;cursor:pointer;transition:all .3s}
+nav button span{font-size:20px}
+nav button.on{color:var(--em);background:rgba(16,185,129,.12)}
+nav button:active,.btn:active{transform:scale(.95)}
+main{flex:1;position:relative;overflow:hidden}
+.tab{position:absolute;inset:0;overflow-y:auto;padding:calc(14px + env(safe-area-inset-top)) 14px 100px;opacity:0;pointer-events:none;transform:translateX(30px);transition:all .35s ease;-webkit-overflow-scrolling:touch}
+.tab.on{opacity:1;pointer-events:auto;transform:none}
+.tab.left{transform:translateX(-30px)}
+h1{font-size:22px;font-weight:800;letter-spacing:.06em}
+h2{font-size:18px;font-weight:800;margin-bottom:8px}
+.sub{color:var(--mu);font-size:13px;margin-bottom:12px}
+.card{background:var(--gl);border:1px solid var(--bd);backdrop-filter:blur(10px);border-radius:16px;padding:14px;margin-bottom:12px;transition:all .3s}
+.card:hover{box-shadow:0 0 22px rgba(16,185,129,.22);border-color:rgba(16,185,129,.5)}
+.btn{border:0;border-radius:14px;padding:13px 18px;font:800 15px 'Plus Jakarta Sans',system-ui,sans-serif;color:#04130d;background:linear-gradient(90deg,var(--em),var(--cy));cursor:pointer;transition:all .2s;box-shadow:0 0 20px rgba(16,185,129,.4)}
+.btn.sec{background:var(--gl);color:var(--tx);border:1px solid var(--bd);box-shadow:none}
+.btn.full{width:100%}
+button:focus-visible,input:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+.hud{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.hud div{background:var(--gl);border:1px solid var(--bd);border-radius:12px;padding:8px;text-align:center}
+.hud b{display:block;font-size:17px;color:var(--em)}
+.hud small{color:var(--mu);font-size:11px}
+#map{height:46vh;min-height:280px;border-radius:16px;border:1px solid var(--bd);margin-bottom:10px;background:var(--bg2)}
+.pin{width:14px;height:14px;border-radius:50%;background:var(--em);box-shadow:0 0 0 4px rgba(16,185,129,.3),0 0 16px var(--em);animation:pulse 2s infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 9px rgba(16,185,129,.05),0 0 16px var(--em)}}
+.bar{height:12px;border-radius:6px;background:rgba(255,255,255,.1);overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;width:0;border-radius:6px;background:linear-gradient(90deg,var(--em),var(--cy));transition:width 1.2s ease}
+.bar.g i{background:linear-gradient(90deg,var(--gold),#fcd34d)}
+.row{display:flex;justify-content:space-between;gap:8px;padding:6px 0;font-size:14px;border-bottom:1px solid var(--bd)}
+.row:last-child{border:0}
+.chip{display:inline-block;padding:9px 13px;margin:4px 4px 0 0;border-radius:20px;border:1px solid var(--bd);background:var(--gl);color:var(--tx);font:600 14px 'Plus Jakarta Sans',system-ui,sans-serif;cursor:pointer;transition:all .2s}
+.chip.on{background:rgba(16,185,129,.2);border-color:var(--em);color:var(--em)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.badge{text-align:center;padding:12px 4px;border-radius:14px;background:var(--gl);border:1px solid var(--bd);font-size:12px;font-weight:600}
+.badge span{display:block;font-size:30px;filter:drop-shadow(0 0 8px var(--gold))}
+.badge.lock{opacity:.4;filter:grayscale(1)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ph{aspect-ratio:1;border-radius:12px;display:flex;align-items:flex-end;padding:8px;font-size:12px;font-weight:600;background:linear-gradient(160deg,rgba(16,185,129,.35),rgba(6,182,212,.15));border:1px solid var(--bd)}
+.help{display:block;margin:16px auto;width:min(80vw,260px);aspect-ratio:1;border-radius:50%;border:2px solid var(--em);background:radial-gradient(circle,rgba(16,185,129,.35),rgba(16,185,129,.05));color:#fff;font:800 22px 'Plus Jakarta Sans',system-ui,sans-serif;cursor:pointer;animation:glow 2.4s infinite;transition:transform .2s}
+.help:active{transform:scale(.95)}
+@keyframes glow{50%{box-shadow:0 0 50px rgba(16,185,129,.55)}}
+.modal{position:fixed;inset:0;z-index:100;background:rgba(5,8,12,.75);backdrop-filter:blur(6px);display:none;align-items:flex-end;justify-content:center}
+.modal.on{display:flex}
+.sheet{width:100%;max-width:520px;background:var(--bg2);border:1px solid var(--bd);border-radius:22px 22px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto;animation:up .3s}
+@keyframes up{from{transform:translateY(60px);opacity:0}}
+input[type=text],input[type=number]{width:100%;padding:12px;margin:6px 0 10px;border-radius:12px;border:1px solid var(--bd);background:var(--gl);color:var(--tx);font:16px 'Plus Jakarta Sans',system-ui,sans-serif}
+input[type=range]{width:100%;accent-color:var(--em);margin:12px 0}
+.scan{position:relative;height:200px;border-radius:14px;border:2px solid var(--em);overflow:hidden;background:#05080c;margin:10px 0}
+.scan i{position:absolute;left:0;right:0;height:3px;background:var(--em);box-shadow:0 0 14px var(--em);animation:sc 1.8s infinite alternate linear}
+@keyframes sc{from{top:0}to{top:100%}}
+#toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translate(-50%,-80px);z-index:200;background:var(--em);color:#04130d;font-weight:800;padding:10px 16px;border-radius:12px;transition:transform .4s}
+#toast.on{transform:translate(-50%,0)}
+.leaflet-container{background:var(--bg2);font-family:inherit}
+@media(min-width:800px){
+ nav{top:0;right:auto;width:96px;flex-direction:column;justify-content:flex-start;gap:8px;padding:20px 8px;border-top:0;border-right:1px solid var(--bd)}
+ main{margin-left:96px}
+ .tab{padding:24px 28px 40px;max-width:900px;margin:auto;left:0;right:0}
+ #map{height:56vh}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+<nav aria-label="Asosiy menyu">
+ <button data-t="map" class="on"><span>🌍</span>Xarita</button>
+ <button data-t="mis"><span>⚡</span>Mission</button>
+ <button data-t="mat"><span>🤝</span>Match</button>
+ <button data-t="lead"><span>🏆</span>XP</button>
+ <button data-t="pro"><span>👤</span>Profil</button>
+</nav>
+<main>
+<section class="tab on" id="map-t">
+ <h1>IMPACTUM</h1><p class="sub" id="hello">Bir inson. Bir yaxshilik. Bir dunyo.</p>
+ <div class="hud"><div><b data-n="48290">0</b><small>Volontyor</small></div><div><b data-n="1200000">0</b><small>Soat</small></div><div><b data-n="84">0</b><small>Davlat</small></div></div>
+ <div id="map"></div>
+ <div class="card" id="city"><b>Shaharni tanlang</b><p class="sub">Xaritadagi yashil nuqtani bosing.</p></div>
+</section>
+
+<section class="tab" id="mis-t">
+ <h1>MISSION</h1><p class="sub">Butun dunyo bitta maqsad sari.</p>
+ <div class="card">
+  <h2>MISSION #001: 10 000 ta daraxt 🌳</h2>
+  <b>7 430 / 10 000 (74%)</b>
+  <div class="bar"><i data-w="74"></i></div>
+  <div class="row"><span>🇺🇸 AQSh</span><b>1 830</b></div>
+  <div class="row"><span>🇺🇿 O‘zbekiston</span><b>1 240</b></div>
+  <div class="row"><span>🇹🇷 Turkiya</span><b>870</b></div>
+  <div class="row"><span>🇰🇷 Koreya</span><b>620</b></div>
+  <div class="row"><span>🇩🇪 Germaniya</span><b>510</b></div>
+  <div class="row"><span>🌍 Boshqalar</span><b>2 360</b></div>
+  <button class="btn full" id="subBtn" style="margin-top:12px">Hissamni yuborish</button>
+ </div>
+</section>
+
+<section class="tab" id="mat-t">
+ <h1>MATCH</h1><p class="sub">Loyiha volontyorni topadi.</p>
+ <button class="help" id="helpBtn">I WANT TO HELP 🌍</button>
+ <div id="res"></div>
+</section>
+
+<section class="tab" id="lead-t">
+ <h1>XP va yutuqlar</h1>
+ <div class="card" style="margin-top:12px">
+  <b>Level 12 • Community Leader</b>
+  <div class="bar g"><i data-w="84"></i></div>
+  <small class="sub">8 450 / 10 000 XP</small>
+  <div class="row"><span>100 XP</span><span>Birinchi aksiya ✅</span></div>
+  <div class="row"><span>500 XP</span><span>10 soat ✅</span></div>
+  <div class="row"><span>5 000 XP</span><span>Community Leader ✅</span></div>
+  <div class="row"><span>10 000 XP</span><span>Global Volunteer 🔒</span></div>
+ </div>
+ <div class="badges card">
+  <div class="badge"><span>🌱</span>Eco Hero</div><div class="badge"><span>❤️</span>Kindness Hero</div>
+  <div class="badge"><span>📚</span>Education Hero</div><div class="badge"><span>🆘</span>Community Helper</div>
+  <div class="badge lock"><span>🌍</span>Global Volunteer</div>
+ </div>
+ <div class="card"><h2>Jonli lenta</h2><div id="feed"></div></div>
+</section>
+
+<section class="tab" id="pro-t">
+ <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+  <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--em),var(--cy));display:grid;place-items:center;font-size:26px;font-weight:800;color:#04130d" id="av">V</div>
+  <div><h2 style="margin:0" id="nm">Volontyor ✔</h2><small class="sub">🇺🇿 Toshkent</small></div>
+ </div>
+ <div class="hud"><div><b>142</b><small>Soat</small></div><div><b>18</b><small>Loyiha</small></div><div><b>Top 5%</b><small>O‘zbekiston</small></div></div>
+ <button class="btn full" id="qrBtn">📷 QR check-in</button>
+ <h2 style="margin-top:16px">Portfolio</h2>
+ <div class="grid2"><div class="ph">🌳 Daraxt ekish ✔ QR</div><div class="ph">📚 Dars berish ✔ QR</div><div class="ph">🧹 Tozalash ✔ QR</div><div class="ph">🎨 Logo dizayn ✔ QR</div></div>
+ <h2 style="margin-top:16px">Sertifikatlar</h2>
+ <div class="card"><div class="row"><span>Eco Hero sertifikati</span><small>ID: IMP-2026-0481</small></div><div class="row"><span>Community Leader</span><small>ID: IMP-2026-1127</small></div>
+ <button class="btn sec full" style="margin-top:10px" id="shareBtn">LinkedIn’da ulashish</button></div>
+</section>
+</main>
+</div>
+
+<div class="modal" id="m1"><div class="sheet" id="sheet"></div></div>
+<div id="toast" role="status"></div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const tg=window.Telegram&&window.Telegram.WebApp;
+if(tg){tg.ready();tg.expand();const u=tg.initDataUnsafe&&tg.initDataUnsafe.user;if(u&&u.first_name){$('#hello').textContent='Salom, '+u.first_name+'! Bir inson. Bir yaxshilik. Bir dunyo.';$('#nm').textContent=u.first_name+' ✔';$('#av').textContent=u.first_name[0]}}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');setTimeout(()=>e.classList.remove('on'),2200)}
+function modal(h){$('#sheet').innerHTML=h;$('#m1').classList.add('on')}
+function closeM(){$('#m1').classList.remove('on')}
+$('#m1').addEventListener('click',e=>{if(e.target.id==='m1')closeM()});
+
+// Tabs
+const order=['map','mis','mat','lead','pro'];let cur='map';
+$$('nav button').forEach(b=>b.onclick=()=>go(b.dataset.t));
+function go(t){
+ if(t===cur)return;const f=order.indexOf(cur),n=order.indexOf(t);
+ $$('nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));
+ const a=$('#'+cur+'-t'),b=$('#'+t+'-t');
+ a.classList.remove('on');a.classList.toggle('left',n>f);
+ b.classList.remove('left');b.style.transform=n>f?'translateX(30px)':'translateX(-30px)';
+ requestAnimationFrame(()=>{b.style.transform='';b.classList.add('on')});
+ cur=t;$$('.bar i',b).forEach(i=>{i.style.width='0';setTimeout(()=>i.style.width=i.dataset.w+'%',60)});
+ if(t==='map')setTimeout(()=>map.invalidateSize(),350);
+}
+
+// HUD counters
+$$('[data-n]').forEach(e=>{const to=+e.dataset.n;let s=0;const st=()=>{s=Math.min(to,s+to/50);e.textContent=s>=1e6?(s/1e6).toFixed(1)+'M':Math.round(s).toLocaleString();if(s<to)requestAnimationFrame(st)};st()});
+
+// Map
+const cities=[['🇺🇿','Toshkent',41.31,69.24,137,4820,23],['🇹🇷','Istanbul',41.01,28.98,92,3110,17],['🇩🇪','Berlin',52.52,13.4,76,2640,14],['🇯🇵','Tokyo',35.68,139.69,64,2210,12],['🇰🇷','Seul',37.57,126.98,58,1980,11],['🇺🇸','Nyu-York',40.71,-74,121,4100,21],['🇰🇪','Nairobi',-1.29,36.82,45,1500,9],['🇵🇭','Manila',14.6,120.98,39,1320,8]];
+const projs={Toshkent:['Mahalla NGO uchun logo','Daraxt ekish aksiyasi','Xayriya bozori'],def:['Mahalliy tozalash aksiyasi','Maktab uchun yordam','Onlayn dars']};
+const map=L.map('map',{worldCopyJump:true,zoomControl:false}).setView([30,40],2);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',maxZoom:8}).addTo(map);
+cities.forEach(c=>{const m=L.marker([c[2],c[3]],{icon:L.divIcon({className:'',html:'<div class="pin"></div>',iconSize:[14,14]})}).addTo(map);
+ m.on('click',()=>{map.flyTo([c[2],c[3]],4,{duration:1});const p=projs[c[1]]||projs.def;
+ $('#city').innerHTML='<h2>'+c[0]+' '+c[1]+'</h2><div class="hud"><div><b>'+c[4]+'</b><small>Volontyor</small></div><div><b>'+c[5].toLocaleString()+'</b><small>Soat</small></div><div><b>'+c[6]+'</b><small>Loyiha</small></div></div>'+p.map(x=>'<div class="row"><span>'+x+'</span><small>Faol</small></div>').join('')})});
+
+// Mission submit
+$('#subBtn').onclick=()=>modal('<h2>Hissangizni yuboring</h2><label class="sub">Nechta daraxt ekdingiz?</label><input type="number" inputmode="numeric" placeholder="5"><label class="sub">Joylashuv</label><input type="text" placeholder="Toshkent, Chilonzor"><label class="sub">Isbot (rasm)</label><input type="file" accept="image/*" style="color:var(--mu);margin-bottom:12px"><button class="btn full" id="send">Yuborish (+50 XP)</button>');
+document.addEventListener('click',e=>{if(e.target.id==='send'){closeM();toast('+50 XP! Rahmat 🌳')}});
+
+// Match wizard
+const W={skills:['Grafik dizayn','SMM','O‘qitish','Eko-tozalash','Tarjima','Tadbir tashkil qilish'],ints:['Ta’lim','Ekologiya','Favqulodda yordam','Jamoa','Hayvonlar'],st:{}};
+$('#helpBtn').onclick=()=>step(0);
+const chips=a=>a.map(x=>'<button class="chip">'+x+'</button>').join('');
+function step(i){
+ const t=['Qayerdasiz?','Nimani bilasiz?','Haftasiga qancha vaqt?','Nimaga qiziqasiz?'];
+ let body='';
+ if(i===0)body='<input type="text" id="city2" placeholder="Masalan: Toshkent">';
+ if(i===1)body=chips(W.skills);
+ if(i===2)body='<input type="range" id="hrs" min="1" max="20" value="5"><b id="hv">5 soat / hafta</b>';
+ if(i===3)body=chips(W.ints);
+ modal('<small class="sub">'+(i+1)+' / 4</small><h2>'+t[i]+'</h2>'+body+'<button class="btn full" id="nx" style="margin-top:14px">'+(i===3?'Topish':'Davom etish')+'</button>');
+ $$('.chip').forEach(c=>c.onclick=()=>c.classList.toggle('on'));
+ const r=$('#hrs');if(r)r.oninput=()=>$('#hv').textContent=r.value+(+r.value===20?'+':'')+' soat / hafta';
+ $('#nx').onclick=()=>{
+  if(i===0)W.st.city=$('#city2').value||'Noma’lum';
+  if(i===1)W.st.s=$$('.chip.on').map(c=>c.textContent);
+  if(i===2)W.st.h=$('#hrs').value;
+  if(i===3){W.st.i=$$('.chip.on').map(c=>c.textContent);return scanning()}
+  step(i+1)}
+}
+function scanning(){
+ modal('<h2>Dunyo bo‘ylab qidirilmoqda…</h2><p class="sub">1 420 ta ehtiyoj tekshirilmoqda</p><div class="scan"><i></i></div>');
+ setTimeout(()=>{closeM();showRes()},2200)}
+function showRes(){
+ const all=[['🇺🇿','Mahalla NGO','Logo kerak (3 soat)','Grafik dizayn'],['🇰🇪','Jamoat maktabi','Ingliz tili o‘qituvchisi (5 soat)','O‘qitish'],['🇵🇭','Maktab','Taqdimot kerak (2 soat)','Grafik dizayn'],['🇹🇷','Ekologik jamoa','Tozalash aksiyasi (4 soat)','Eko-tozalash'],['🇩🇪','Qochoqlar markazi','Tarjimon kerak (3 soat)','Tarjima'],['🇺🇿','Yuksalish','Tadbir tashkilotchisi (6 soat)','Tadbir tashkil qilish'],['🇮🇳','Onlayn klub','SMM yurituvchi (3 soat)','SMM']];
+ let m=all.filter(p=>(W.st.s||[]).includes(p[3]));if(!m.length)m=all.slice(0,3);
+ $('#res').innerHTML='<h2>'+m.length+' ta loyiha topildi</h2><p class="sub">'+W.st.city+' • haftasiga '+W.st.h+' soat</p>'+m.map(p=>'<div class="card"><b>'+p[0]+' '+p[1]+'</b><p class="sub" style="margin:4px 0 10px">'+p[2]+'</p><button class="btn sec apply">Qatnashaman</button></div>').join('');
+ $$('.apply').forEach(b=>b.onclick=()=>{b.textContent='Yuborildi ✔';toast('Ariza yuborildi')})}
+
+// Feed
+const feed=[['Sardor (🇺🇿)','Eco Hero nishonini oldi'],['Aylin (🇹🇷)','100 XP to‘pladi'],['Jonas (🇩🇪)','Mission #001 ga 12 daraxt qo‘shdi'],['Min-ji (🇰🇷)','Community Helper bo‘ldi']];
+$('#feed').innerHTML=feed.map(f=>'<div class="row"><span><b>'+f[0]+'</b> '+f[1]+'</span></div>').join('');
+
+// QR + share
+$('#qrBtn').onclick=()=>{modal('<h2>QR check-in</h2><p class="sub">Loyiha QR kodini kamera oldiga tuting</p><div class="scan"><i></i></div><button class="btn sec full" id="cl">Yopish</button>');$('#cl').onclick=closeM};
+$('#shareBtn').onclick=()=>toast('Tez orada: LinkedIn ulashuvi');
+setTimeout(()=>$$('#mis-t .bar i').forEach(i=>i.style.width=i.dataset.w+'%'),300);
+</script>
+</body>
+</html>
